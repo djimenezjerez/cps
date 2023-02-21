@@ -9,25 +9,29 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
-        User::firstOrCreate([
-            'username' => 'admin',
-        ], [
-            'password' => 'admin',
-            'name' => 'Super Administrador'
-        ]);
+        $data = [
+            [
+                'username' => 'admin',
+                'password' => 'admin',
+                'name' => 'Super Administrador',
+            ], [
+                'username' => 'smendez',
+                'password' => '123456',
+                'name' => 'Sebastián Mendez',
+            ], [
+                'username' => 'djimenez',
+                'password' => '123456',
+                'name' => 'Daniel Jiménez',
+            ],
+        ];
 
-        User::firstOrCreate([
-            'username' => 'smendez',
-        ], [
-            'password' => '123456',
-            'name' => 'Sebastián Mendez'
-        ]);
-
-        User::firstOrCreate([
-            'username' => 'djimenez',
-        ], [
-            'password' => '123456',
-            'name' => 'Daniel Jiménez'
-        ]);
+        foreach ($data as $row) {
+            User::firstOrCreate([
+                'username' => $row['username'],
+            ], [
+                'password' => $row['password'],
+                'name' => $row['name'],
+            ]);
+        }
     }
 }
