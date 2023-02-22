@@ -1,0 +1,12 @@
+/**
+ * src/styles/settings.scss
+ *
+ * Configures SASS variables and Vuetify overwrites
+ */
+
+// https://next.vuetifyjs.com/features/sass-variables/`
+@use 'vuetify/settings' with (
+    $color-pack: true,
+    $table-border-color: rgb(14, 99, 85),
+    $breadcrumbs-item-disabled-opacity: 1,
+);
