@@ -13,8 +13,8 @@ return new class extends Migration
             $table->string('code')->unique()->nullable(false);
             $table->unsignedSmallInteger('year_start')->nullable(false);
             $table->unsignedSmallInteger('year_end')->nullable(false);
-            $table->foreignId('user_id')->constrained()->nullable(false)->restrictOnUpdate()->restrictOnDelete();
-            $table->foreignId('business_id')->constrained()->nullable(false)->restrictOnUpdate()->restrictOnDelete();
+            $table->foreignId('user_id')->constrained()->nullable(false)->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('business_id')->constrained()->nullable(false)->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

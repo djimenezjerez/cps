@@ -23,4 +23,9 @@ class Credential extends Model
     {
         return $this->belongsTo(Business::class);
     }
+
+    public function years()
+    {
+        return $this->hasMany(Year::class);
+    }
 }

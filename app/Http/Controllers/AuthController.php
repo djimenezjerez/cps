@@ -9,10 +9,10 @@ class AuthController extends Controller
 {
     public function me()
     {
-        return [
+        return response()->json([
             'message' => 'Usuario actual',
             'payload' => Auth::user(),
-        ];
+        ]);
     }
 
     public function login(Request $request)
@@ -29,13 +29,13 @@ class AuthController extends Controller
                 $user->setRememberToken($token);
                 $user->save();
             }
-            return [
+            return response()->json([
                 'message' => 'Bienvenido',
                 'payload' => [
                     'access_token' => $token,
                     'user' => $user,
                 ],
-            ];
+            ]);
         }
         return response()->json([
             'message' => 'Credenciales inválidas',
@@ -53,8 +53,8 @@ class AuthController extends Controller
             $user->setRememberToken(null);
             $user->save();
         }
-        return [
+        return response()->json([
             'message' => 'Sesión finalizada',
-        ];
+        ]);
     }
 }

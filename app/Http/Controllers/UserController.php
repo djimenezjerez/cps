@@ -12,10 +12,10 @@ class UserController extends Controller
     public function index(Request $request)
     {
         if ($request->has('combo')) {
-            return [
+            return response()->json([
                 'message' => 'Lista de registros',
                 'payload' => DB::table('users')->select('id', 'name', 'username')->orderBy('name')->get(),
-            ];
+            ]);
         }
 
         $user = Auth::user();
@@ -36,10 +36,10 @@ class UserController extends Controller
             }
         }
 
-        return [
+        return response()->json([
             'message' => 'Lista de registros',
             'payload' => $query->paginate($request->per_page ?? 8, ['*'], 'page', $request->page ?? 1),
-        ];
+        ]);
     }
 
     public function store(Request $request)
@@ -50,18 +50,18 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:5', 'max:255'],
         ]);
         $user = User::create($request->all());
-        return [
+        return response()->json([
             'message' => 'Registro almacenado',
             'payload' => $user,
-        ];
+        ]);
     }
 
     public function show(User $user)
     {
-        return [
+        return response()->json([
             'message' => 'Detalle del registro',
             'payload' => $user,
-        ];
+        ]);
     }
 
     public function update(Request $request, User $user)
@@ -87,41 +87,19 @@ class UserController extends Controller
                 $user->save();
             }
         }
-        return [
+        return response()->json([
             'message' => 'Registro modificado',
             'payload' => $user,
-        ];
+        ]);
     }
 
     public function destroy(User $user)
     {
         $user->tokens()->delete();
         $user->delete();
-        return [
+        return response()->json([
             'message' => 'Registro eliminado',
             'payload' => $user,
-        ];
-    }
-
-    public function headers()
-    {
-        return [
-            'message' => 'Cabeceras',
-            'payload' => [
-                [
-                    'column' => 'id',
-                    'title' => 'ID',
-                    'type' => 'integer',
-                ], [
-                    'column' => 'name',
-                    'title' => 'Nombre',
-                    'type' => 'string',
-                ], [
-                    'column' => 'username',
-                    'title' => 'Usuario',
-                    'type' => 'string',
-                ],
-            ],
-        ];
+        ]);
     }
 }

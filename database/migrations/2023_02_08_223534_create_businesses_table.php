@@ -14,8 +14,8 @@ return new class extends Migration
             $table->unsignedBigInteger('nit')->nullable(true);
             $table->string('code')->nullable(true);
             $table->string('address')->nullable(true);
-            $table->foreignId('ceo_id')->constrained('employees')->nullable(true)->restrictOnUpdate()->restrictOnDelete();
-            $table->foreignId('contact_id')->constrained('employees')->nullable(true)->restrictOnUpdate()->restrictOnDelete();
+            $table->foreignId('ceo_id')->constrained('employees')->nullable(true)->cascadeOnUpdate()->cascadeOnDelete();
+            $table->foreignId('contact_id')->constrained('employees')->nullable(true)->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

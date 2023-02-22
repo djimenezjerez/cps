@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use App\Models\Year;
 use App\Models\Business;
 use App\Models\Employee;
 use App\Models\Credential;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\UpdateCredentialRequest;
 
 class CredentialController extends Controller
 {
@@ -24,10 +24,10 @@ class CredentialController extends Controller
             }
         }
 
-        return [
+        return response()->json([
             'message' => 'Lista de registros',
             'payload' => $query->paginate($request->per_page ?? 8, ['*'], 'page', $request->page ?? 1),
-        ];
+        ]);
     }
 
     public function store(Request $request)
@@ -62,22 +62,25 @@ class CredentialController extends Controller
 
         DB::beginTransaction();
         try {
-            $ceo = Employee::create([
-                'name' => $request->ceo_name,
-                'phone' => $request->ceo_phone,
+            $ceo = Employee::firstOrCreate([
                 'ci' => $request->ceo_ci,
                 'ci_complement' => $request->ceo_ci_complement,
                 'city_id' => $request->ceo_city_id,
+            ], [
+                'name' => $request->ceo_name,
+                'phone' => $request->ceo_phone,
             ]);
-            $contact = Employee::create([
-                'name' => $request->contact_name,
-                'phone' => $request->contact_phone,
+            $contact = Employee::firstOrCreate([
                 'ci' => $request->contact_ci,
                 'ci_complement' => $request->contact_ci_complement,
                 'city_id' => $request->contact_city_id,
+            ], [
+                'name' => $request->contact_name,
+                'phone' => $request->contact_phone,
             ]);
-            $business = Business::create([
+            $business = Business::firstOrCreate([
                 'name' => $request->business_name,
+            ], [
                 'nit' => $request->nit,
                 'code' => $request->business_code,
                 'address' => $request->address,
@@ -91,14 +94,20 @@ class CredentialController extends Controller
                 'user_id' => Auth::user()->id,
                 'business_id' => $business->id,
             ]);
+            for ($year = $request->year_start; $year <= $request->year_end; $year++) {
+                Year::create([
+                    'name' => $year,
+                    'credential_id' => $credential->id,
+                ]);
+            }
             DB::commit();
-            return [
+            return response()->json([
                 'message' => 'Registro almacenado',
                 'payload' => [
                     'credential' => $credential,
                     'business' => $business,
                 ],
-            ];
+            ]);
         } catch(Exception $error) {
             logger($error);
             DB::rollBack();
@@ -110,31 +119,27 @@ class CredentialController extends Controller
 
     public function show(Credential $credential)
     {
-        return [
+        return response()->json([
             'message' => 'Detalle del registro',
-            'payload' => DB::table('credentials as c')->select('c.*', 'u.name as user_name', 'b.name as business_name', 'b.nit', 'b.code as business_code', 'b.address', 'b.ceo_id', 'b.contact_id', 'ceo.name as ceo_name', 'ceo.ci as ceo_ci', 'ceo.ci_complement as ceo_ci_complement', 'ceo.city_id as ceo_city_id', 'ceo.phone as ceo_phone', 'contact.name as contact_name', 'contact.ci as contact_ci', 'contact.ci_complement as contact_ci_complement', 'contact.city_id as contact_city_id', 'contact.phone as contact_phone')->leftJoin('users as u', 'u.id', '=', 'c.user_id')->leftJoin('businesses as b', 'b.id' , '=', 'c.business_id')->leftJoin('employees as ceo', 'ceo.id', '=', 'b.ceo_id')->leftJoin('employees as contact', 'contact.id', '=', 'b.contact_id')->where('c.id', $credential->id)->first(),
-        ];
+            'payload' => DB::table('credentials as c')->select('c.*', 'u.name as user_name', 'b.name as business_name', 'b.nit', 'b.code as business_code', 'b.address', 'ceo.name as ceo_name', 'ceo.ci as ceo_ci', 'ceo.ci_complement as ceo_ci_complement', 'ceo.city_id as ceo_city_id', 'ceo.phone as ceo_phone', 'contact.name as contact_name', 'contact.ci as contact_ci', 'contact.ci_complement as contact_ci_complement', 'contact.city_id as contact_city_id', 'contact.phone as contact_phone')->leftJoin('users as u', 'u.id', '=', 'c.user_id')->leftJoin('businesses as b', 'b.id' , '=', 'c.business_id')->leftJoin('employees as ceo', 'ceo.id', '=', 'b.ceo_id')->leftJoin('employees as contact', 'contact.id', '=', 'b.contact_id')->where('c.id', $credential->id)->first(),
+        ]);
     }
 
     public function update(Request $request, Credential $credential)
     {
         $request->validate([
-            'id' => ['required', 'integer', 'exists:credentials,id'],
-            'code' => ['required', 'string', 'min:1', 'max:255', 'unique:credentials,code,'.$request->id],
+            'code' => ['required', 'string', 'min:1', 'max:255', 'unique:credentials,code,'.$credential->id],
             'year_start' => ['required', 'integer', 'min:2000', 'max:2030'],
             'year_end' => ['required', 'integer', 'min:2000', 'max:2030'],
-            'business_id' => ['required', 'integer', 'exists:businesses,id'],
-            'business_name' => ['required', 'string', 'min:1', 'max:255', 'unique:businesses,name,'.$request->business_id],
+            'business_name' => ['required', 'string', 'min:1', 'max:255', 'unique:businesses,name,'.$credential->business->id],
             'nit' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:18446744073709551615'],
             'business_code' => ['sometimes', 'nullable', 'string', 'min:1', 'max:255'],
             'address' => ['sometimes', 'nullable', 'string', 'min:1', 'max:255'],
-            'ceo_id' => ['required', 'integer', 'exists:employees,id'],
             'ceo_name' => ['required', 'string', 'min:1', 'max:255'],
             'ceo_ci' => ['required', 'numeric', 'min:0', 'max:18446744073709551615'],
             'ceo_ci_complement' => ['sometimes', 'nullable', 'string', 'min:1', 'max:3'],
             'ceo_city_id' => ['sometimes', 'nullable', 'integer', 'exists:cities,id'],
             'ceo_phone' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:79999999'],
-            'contact_id' => ['required', 'integer', 'exists:employees,id'],
             'contact_name' => ['required', 'string', 'min:1', 'max:255'],
             'contact_ci' => ['required', 'numeric', 'min:0', 'max:18446744073709551615'],
             'contact_ci_complement' => ['sometimes', 'nullable', 'string', 'min:1', 'max:3'],
@@ -152,40 +157,49 @@ class CredentialController extends Controller
 
         DB::beginTransaction();
         try {
-            Employee::find($request->ceo_id)->update([
+            Employee::find($credential->business->ceo->id)->update([
                 'name' => $request->ceo_name,
                 'phone' => $request->ceo_phone,
                 'ci' => $request->ceo_ci,
                 'ci_complement' => $request->ceo_ci_complement,
                 'city_id' => $request->ceo_city_id,
             ]);
-            Employee::find($request->contact_id)->update([
+            Employee::find($credential->business->contact->id)->update([
                 'name' => $request->contact_name,
                 'phone' => $request->contact_phone,
                 'ci' => $request->contact_ci,
                 'ci_complement' => $request->contact_ci_complement,
                 'city_id' => $request->contact_city_id,
             ]);
-            Business::find($request->business_id)->update([
+            Business::find($credential->business->id)->update([
                 'name' => $request->business_name,
                 'nit' => $request->nit,
                 'code' => $request->business_code,
                 'address' => $request->address,
             ]);
-            Credential::find($request->id)->update([
+            Credential::find($credential->id)->update([
                 'code' => $request->code,
                 'year_start' => $request->year_start,
                 'year_end' => $request->year_end,
                 'user_id' => Auth::user()->id,
             ]);
+            $years = [];
+            for ($year = $request->year_start; $year <= $request->year_end; $year++) {
+                $new_year = Year::firstOrCreate([
+                    'name' => $year,
+                    'credential_id' => $credential->id,
+                ]);
+                $years[] = $new_year->id;
+            }
+            Year::whereNotIn('id', $years)->delete();
             DB::commit();
-            return [
+            return response()->json([
                 'message' => 'Registro actualizado',
                 'payload' => [
                     'credential' => $credential,
                     'business' => $credential->business,
                 ],
-            ];
+            ]);
         } catch(Exception $error) {
             logger($error);
             DB::rollBack();
@@ -197,9 +211,10 @@ class CredentialController extends Controller
 
     public function destroy(Credential $credential)
     {
-        $credential->delete();
-        return [
+        $credential->business->ceo->delete();
+        $credential->business->contact->delete();
+        return response()->json([
             'message' => 'Registro eliminado',
-        ];
+        ]);
     }
 }
