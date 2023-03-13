@@ -305,11 +305,10 @@
 </template>
 
 <script setup>
-import { inject } from 'vue'
+import { inject, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/store/app'
 import { storeToRefs } from 'pinia'
-import { ref, onMounted } from 'vue'
 
 const axios = inject('axios')
 const route = useRoute()
